@@ -8,6 +8,9 @@ using System.Threading.Tasks;
 
 namespace BaseRepo
 {
+
+
+
     public class Repository<T> : IRepository<T> where T : class
     {
         #region Fields
