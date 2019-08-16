@@ -1,0 +1,9 @@
+C:\Users\saravanan.n\source\repos\BaseRepo\BaseRepo\obj\Debug\BaseRepo.csprojAssemblyReference.cache
+C:\Users\saravanan.n\source\repos\BaseRepo\BaseRepo\obj\Debug\BaseRepo.csproj.CoreCompileInputs.cache
+C:\Users\saravanan.n\source\repos\BaseRepo\BaseRepo\bin\Debug\BaseRepo.dll
+C:\Users\saravanan.n\source\repos\BaseRepo\BaseRepo\bin\Debug\BaseRepo.pdb
+C:\Users\saravanan.n\source\repos\BaseRepo\BaseRepo\bin\Debug\Dapper.dll
+C:\Users\saravanan.n\source\repos\BaseRepo\BaseRepo\bin\Debug\Dapper.xml
+C:\Users\saravanan.n\source\repos\BaseRepo\BaseRepo\obj\Debug\BaseRepo.csproj.CopyComplete
+C:\Users\saravanan.n\source\repos\BaseRepo\BaseRepo\obj\Debug\BaseRepo.dll
+C:\Users\saravanan.n\source\repos\BaseRepo\BaseRepo\obj\Debug\BaseRepo.pdb
