@@ -8,25 +8,27 @@ using System.Linq.Expressions;
 using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
-
+using ASLogger;
 namespace BaseRepo
 {
-    public class DataContext : IDataContext, IDisposable
+    public class DataContext : IDataContext
     {
         #region Fields
-        private readonly IProvider _provider;
+        private readonly IProvider _provider =new SqlServerProvider();
         private readonly IDbConnection _connection;
+        private readonly IAslogger _logger;   
         #endregion
 
         #region Ctor
-        public DataContext(string connectionName)
+        public DataContext(string connectionstring)
         {
-            Check.IsEmpty(connectionName);
+            Check.IsEmpty(connectionstring);
+            // var connectionString = ConfigurationManager.ConnectionStrings[connectionName];
 
-            var connectionString = ConfigurationManager.ConnectionStrings[connectionName];
-
-            _provider = ProviderHelper.GetProvider(connectionString.ProviderName);
-            _connection = _provider.CreateConnection(connectionString.ConnectionString);
+            // _provider = ProviderHelper.GetProvider(connectionString.ProviderName);
+            //_connection = _provider.CreateConnection(connectionString.ConnectionString);             
+             _connection = _provider.CreateConnection(connectionstring);
+            _logger = new ASLogProvider("");
         }
         #endregion
 
@@ -40,20 +42,28 @@ namespace BaseRepo
         protected virtual IDictionary<string, object> GetParameters<T>(IEnumerable<T> items)
         {
             Check.IsNullOrEmpty(items);
-
-            var parameters = new Dictionary<string, object>();
-            var entityArray = items.ToArray();
-            var entityType = entityArray[0].GetType();
-            for (int i = 0; i < entityArray.Length; i++)
+            try
             {
-                var properties = entityArray[i].GetType().GetProperties(BindingFlags.Public | BindingFlags.Instance);
-                properties = properties.Where(x => x.Name != "Id").ToArray();
+                var parameters = new Dictionary<string, object>();
+                var entityArray = items.ToArray();
+                var entityType = entityArray[0].GetType();
+                for (int i = 0; i < entityArray.Length; i++)
+                {
+                    var properties = entityArray[i].GetType().GetProperties(BindingFlags.Public | BindingFlags.Instance);
+                    properties = properties.Where(x => x.Name != "Id").ToArray();
 
-                foreach (var property in properties)
-                    parameters.Add(property.Name + (i + 1), entityType.GetProperty(property.Name).GetValue(entityArray[i], null));
+                    foreach (var property in properties)
+                        parameters.Add(property.Name + (i + 1), entityType.GetProperty(property.Name).GetValue(entityArray[i], null));
+                }
+
+                return parameters;
             }
-
-            return parameters;
+            catch (Exception e)
+            {
+                _logger.Error(e, e.Message);
+                throw;
+            }
+           
         }
         #endregion
 
@@ -66,12 +76,20 @@ namespace BaseRepo
         /// <param name="transaction"></param>
         public virtual void Insert<T>(T item, IDbTransaction transaction = null) where T : class
         {
-            Check.IsNull(item);
 
-            string commandText = _provider.InsertQuery(typeof(T).Name, item);
-
-            //execute
-              _connection.ExecuteScalar<int>(commandText, item, transaction);
+            try
+            { 
+                     Check.IsNull(item);
+                     string commandText = _provider.InsertQuery(typeof(T).Name, item);              
+                    _connection.ExecuteScalar<int>(commandText, item, transaction);
+                  
+            }
+            catch (Exception e)
+            {
+                _logger.Error(e, e.Message);
+                throw;
+            }
+          
         }
 
         /// <summary>
@@ -86,9 +104,9 @@ namespace BaseRepo
 
             string commandText = _provider.InsertBulkQuery(typeof(T).Name, items);
             var parameters = GetParameters(items);
-
-            //execute
-            return _connection.Execute(commandText, parameters, transaction);
+             
+                return _connection.Execute(commandText, parameters, transaction);
+             
         }
 
         /// <summary>
@@ -119,60 +137,12 @@ namespace BaseRepo
 
             string commandText = _provider.UpdateBulkQuery(typeof(T).Name, items);
             var parameters = GetParameters(items);
-
-            //execute
+             
             return _connection.Execute(commandText, parameters, transaction);
         }
-
-        /// <summary>
-        /// Delete an item
-        /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <param name="item"></param>
-        /// <param name="transaction"></param>
-        public virtual int Delete<T>(T item, IDbTransaction transaction = null) where T : class
-        {
-            Check.IsNull(item);
-
-            string commandText = _provider.DeleteQuery(typeof(T).Name);
-
-            //execute
-            //return _connection.Execute(commandText, new { item.Id }, transaction);
-            return 1;
-        }
-
-        /// <summary>
-        /// Delete item collection
-        /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <param name="items"></param>
-        /// <param name="transaction"></param>
-        public virtual int DeleteBulk<T>(IEnumerable<T> items, IDbTransaction transaction = null) where T : class
-        {
-            Check.IsNullOrEmpty(items);
-
-            string commandText = _provider.DeleteBulkQuery(typeof(T).Name);
-            // var parameters = items.Select(x => x.Id).ToArray();
-
-            //execute
-            //return _connection.Execute(commandText, new { Ids = parameters });
-            return 1;
-        }
-
-        /// <summary>
-        /// Find item by identifier
-        /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <param name="Id">Default parameter name is @Id</param>
-        /// <returns></returns>
-        public virtual T Find<T>(int Id) where T : class
-        {
-             string commandText = "";
-
-            //execute first query
-            return _connection.QueryFirst<T>(commandText, new { Id });
-          
-        }
+         
+      
+       
 
         /// <summary>
         /// Find an item by lambda expressions
@@ -199,7 +169,7 @@ namespace BaseRepo
         {
             IEnumerable<T> items = new List<T>();
             string commandText = _provider.SelectQuery<T>(expression, typeof(T).Name);
-            var parameters = ExpressionHelper.GetWhereParemeters(expression);
+            var parameters = expression is  null ?null: ExpressionHelper.GetWhereParemeters(expression);
 
             //execute query
             return _connection.Query<T>(commandText, parameters);
@@ -296,166 +266,52 @@ namespace BaseRepo
         public virtual T ExecuteScalarProcedure<T>(string storedProcedureName, object parameters = null, IDbTransaction transaction = null) where T : class
         {
             Check.IsNullOrEmpty(storedProcedureName);
-
-            //execute scalar
-            return _connection.ExecuteScalar<T>(sql: storedProcedureName,
-                param: parameters,
-                transaction: transaction,
-                commandType: CommandType.StoredProcedure);
-        }
-        #endregion
-
-        #region Async Methods
-        public async Task InsertAsync<T>(T item, IDbTransaction transaction = null) where T : class
-        {
-            Check.IsNull(item);
-
-            string commandText = _provider.InsertQuery(typeof(T).Name, item);
-
-            //execute
-            // item.Id = await _connection.ExecuteScalarAsync<int>(commandText, item, transaction);
+             
             
+                return _connection.ExecuteScalar<T>(sql: storedProcedureName,
+              param: parameters,
+              transaction: transaction,
+              commandType: CommandType.StoredProcedure);
+           
         }
 
-        public async Task<int> InsertBulkAsync<T>(IEnumerable<T> items, IDbTransaction transaction = null) where T : class
+        /// <summary>
+        ///Execute Sp and returns the reader & Dont use using in this method
+        /// </summary>
+        /// <param name="storedProcedureName"></param>
+        /// <param name="parameters"></param>
+        /// <param name="transaction"></param>
+        /// <returns></returns>
+        public virtual SqlMapper.GridReader ExecuteProcedureMultipleResult(string storedProcedureName, object parameters = null, IDbTransaction transaction = null)  
         {
-            Check.IsNullOrEmpty(items);
-
-            string commandText = _provider.InsertBulkQuery(typeof(T).Name, items);
-            var parameters = GetParameters(items);
-
-            //execute
-            return await _connection.ExecuteAsync(commandText, parameters, transaction);
+            Check.IsNullOrEmpty(storedProcedureName);
+                return _connection.QueryMultiple(sql: storedProcedureName,
+               param: parameters,
+               transaction: transaction,
+               commandType: CommandType.StoredProcedure);        
         }
-
-        public async Task<int> UpdateAsync<T>(T item, IDbTransaction transaction = null) where T : class
-        {
-            Check.IsNull(item);
-
-            string commandText = _provider.UpdateQuery(typeof(T).Name, item);
-
-            //execute
-            return await _connection.ExecuteAsync(commandText, item, transaction);
-        }
-
-        public async Task<int> UpdateBulkAsync<T>(IEnumerable<T> items, IDbTransaction transaction = null) where T : class
-        {
-            Check.IsNullOrEmpty(items);
-
-            string commandText = _provider.UpdateBulkQuery(typeof(T).Name, items);
-            var parameters = GetParameters(items);
-
-            //execute
-            return await _connection.ExecuteAsync(commandText, parameters, transaction);
-        }
-
-        public async Task<int> DeleteAsync<T>(T item, IDbTransaction transaction = null) where T : class
-        {
-            Check.IsNull(item);
-
-            string commandText = _provider.DeleteQuery(typeof(T).Name);
-
-            //execute
-            //  return await _connection.ExecuteAsync(commandText, new { item.Id }, transaction);
-            return 1;
-        }
-
-        public async Task<int> DeleteBulkAsync<T>(IEnumerable<T> items, IDbTransaction transaction = null) where T : class
-        {
-            Check.IsNullOrEmpty(items);
-
-            string commandText = _provider.UpdateBulkQuery(typeof(T).Name, items);
-            var parameters = GetParameters(items);
-
-            //execute
-            return await _connection.ExecuteAsync(commandText, parameters, transaction);
-        }
-
-        public async Task<T> FindAsync<T>(int Id) where T : class
-        {
-            string commandText ="";
-
-            //execute first query
-            return await _connection.QueryFirstAsync<T>(commandText, new { Id });
-        }
-
-        public async Task<T> FindAsync<T>(Expression<Func<T, bool>> expression) where T : class
-        {
-            string commandText = _provider.SelectFirstQuery<T>(expression, typeof(T).Name);
-            var parameters = ExpressionHelper.GetWhereParemeters(expression);
-
-            //execute first query
-            return await _connection.QueryFirstAsync<T>(commandText, parameters);
-        }
-
-        public async Task<IEnumerable<T>> FindAllAsync<T>(Expression<Func<T, bool>> expression) where T : class
-        {
-            IEnumerable<T> items = new List<T>();
-            string commandText = _provider.SelectQuery<T>(expression, typeof(T).Name);
-            var parameters = ExpressionHelper.GetWhereParemeters(expression);
-
-            //execute query
-            return await _connection.QueryAsync<T>(commandText, parameters);
-        }
-
-        public async Task<int> ExecuteAsync(string commandText, object parameters = null, IDbTransaction transaction = null)
-        {
-            Check.IsNullOrEmpty(commandText);
-
-            //execute
-            return await _connection.ExecuteAsync(commandText, parameters, transaction);
-        }
-
-        public async Task<IDataReader> ExecuteReaderAsync(string commandText, object parameters = null, IDbTransaction transaction = null)
-        {
-            Check.IsNullOrEmpty(commandText);
-
-            //execute reader
-            return await _connection.ExecuteReaderAsync(commandText, parameters, transaction);
-        }
-
-        public async Task<T> ExecuteScalarAsync<T>(string commandText, object parameters = null, IDbTransaction transaction = null) where T : class
-        {
-            Check.IsNullOrEmpty(commandText);
-
-            //execute reader
-            return await _connection.ExecuteScalarAsync<T>(commandText, parameters, transaction);
-        }
-
-        public async Task<int> ExecuteProcedureAsync(string storedProcedureName, object parameters = null, IDbTransaction transaction = null)
+        /// <summary>
+        /// /Execute Sp and returns the result
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="storedProcedureName"></param>
+        /// <param name="parameters"></param>
+        /// <param name="transaction"></param>
+        /// <returns></returns>
+        public virtual IEnumerable<T> ExecuteProcedureSingleResult<T>(string storedProcedureName, object parameters = null, IDbTransaction transaction = null) where T : class
         {
             Check.IsNullOrEmpty(storedProcedureName);
 
-            //execute
-            return await _connection.ExecuteAsync(sql: storedProcedureName,
-                param: parameters,
-                transaction: transaction,
-                commandType: CommandType.StoredProcedure);
-        }
+             return _connection.Query<T>(sql: storedProcedureName,
+               param: parameters,
+               transaction: transaction,
+               commandType: CommandType.StoredProcedure);
+           
 
-        public async Task<IDataReader> ExecuteReaderProcedureAsync(string storedProcedureName, object parameters = null, IDbTransaction transaction = null)
-        {
-            Check.IsNullOrEmpty(storedProcedureName);
-
-            //execute reader
-            return await _connection.ExecuteReaderAsync(sql: storedProcedureName,
-                param: parameters,
-                transaction: transaction,
-                commandType: CommandType.StoredProcedure);
-        }
-
-        public async Task<T> ExecuteScalarProcedureAsync<T>(string storedProcedureName, object parameters = null, IDbTransaction transaction = null) where T : class
-        {
-            Check.IsNullOrEmpty(storedProcedureName);
-
-            //execute scalar
-            return await _connection.ExecuteScalarAsync<T>(sql: storedProcedureName,
-                param: parameters,
-                transaction: transaction,
-                commandType: CommandType.StoredProcedure);
         }
         #endregion
 
+      
         #region Context Management
         /// <summary>
         /// Begin transcation scope

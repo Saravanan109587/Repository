@@ -12,7 +12,7 @@ namespace BaseRepo
         public static IDictionary<string, object> GetWhereParemeters<T>(Expression<Func<T, bool>> expression) where T : class
         {
             IDictionary<string, object> dictionaryParams = new Dictionary<string, object>();
-            FillQueryProperties(expression.Body, ExpressionType.Default, ref dictionaryParams);
+            FillQueryProperties(expression  is null ?null :expression.Body, ExpressionType.Default, ref dictionaryParams);
 
             return dictionaryParams;
         }
@@ -89,9 +89,14 @@ namespace BaseRepo
 
         public static BinaryExpression GetBinaryExpression(Expression expression)
         {
-            var binaryExpression = expression as BinaryExpression;
-            var body = binaryExpression ?? Expression.MakeBinary(ExpressionType.Equal, expression, expression.NodeType == ExpressionType.Not ? Expression.Constant(false) : Expression.Constant(true));
-            return body;
+            if(expression != null)
+            {
+                var binaryExpression = expression as BinaryExpression;
+                var body = binaryExpression ?? Expression.MakeBinary(ExpressionType.Equal, expression, expression.NodeType == ExpressionType.Not ? Expression.Constant(false) : Expression.Constant(true));
+                return body;
+            }
+            return null;
+            
         }
 
         public static object GetValuesFromCollection(MethodCallExpression callExpr)

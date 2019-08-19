@@ -1,26 +1,25 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Diagnostics;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Text;
 using System.Threading.Tasks;
+using Dapper;
 
 namespace BaseRepo
 {
-
-
-
     public class Repository<T> : IRepository<T> where T : class
     {
         #region Fields
-        private readonly IDataContext _dataContext;
+        private readonly string _connectionstring;
         #endregion
 
         #region Ctor
-        public Repository()
+        public Repository(string connectionstring)
         {
-            _dataContext = new DataContext("DbConnection");
+            _connectionstring = connectionstring;
         }
         #endregion
 
@@ -29,7 +28,11 @@ namespace BaseRepo
         {
             try
             {
-                _dataContext.Insert(item);
+                using (IDataContext _dataContext = new DataContext(_connectionstring))
+                {
+                    _dataContext.Insert(item);
+                }
+              
             }
             catch (Exception ex)
             {
@@ -41,7 +44,10 @@ namespace BaseRepo
         {
             try
             {
-                _dataContext.InsertBulk(items);
+                using (IDataContext _dataContext = new DataContext(_connectionstring))
+                {
+                    _dataContext.InsertBulk(items);
+                }
             }
             catch (Exception ex)
             {
@@ -49,67 +55,44 @@ namespace BaseRepo
             }
         }
 
-        public void Update(T item)
-        {
-            try
-            {
-                _dataContext.Update(item);
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine(ex.ToString());
-            }
-        }
-
-        public void UpdateBulk(IEnumerable<T> items)
-        {
-            try
-            {
-                _dataContext.UpdateBulk(items);
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine(ex.ToString());
-            }
-        }
-
-        public void Delete(T item)
-        {
-            try
-            {
-                _dataContext.Delete(item);
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine(ex.ToString());
-            }
-        }
-
-        public void DeleteBulk(IEnumerable<T> items)
-        {
-            try
-            {
-                _dataContext.DeleteBulk(items);
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine(ex.ToString());
-            }
-        }
-
-        public T Find(int Id)
-        {
-            return _dataContext.Find<T>(Id);
-        }
-
+       
         public T Find(Expression<Func<T, bool>> expression)
         {
-            return _dataContext.Find(expression);
+            using (IDataContext _dataContext = new DataContext(_connectionstring))
+            {
+                return _dataContext.Find(expression);
+            }
         }
 
         public IList<T> FindAll(Expression<Func<T, bool>> expression)
         {
-            return _dataContext.FindAll(expression).ToList();
+            using (IDataContext _dataContext = new DataContext(_connectionstring))
+            {
+                return _dataContext.FindAll(expression).ToList();
+            }
+        }
+
+        public int Execute(string commandText, object parameters = null, IDbTransaction transaction = null)
+        {
+            using (IDataContext _dataContext = new DataContext(_connectionstring))
+            {
+                return _dataContext.Execute(commandText, parameters, transaction);
+            }
+        }
+
+        public IEnumerable<T1> ExecuteProcedureSingleResult<T1>(string storedProcedureName, object parameters = null, IDbTransaction transaction = null) where T1 : class
+        {
+            using (IDataContext _dataContext = new DataContext(_connectionstring))
+            {
+                return _dataContext.ExecuteProcedureSingleResult<T1>(storedProcedureName, parameters, transaction);
+            }
+        }
+
+        public SqlMapper.GridReader ExecuteProcedureMultipleResult(string storedProcedureName, object parameters = null, IDbTransaction transaction = null)
+        {
+                 IDataContext _dataContext = new DataContext(_connectionstring);
+                 return _dataContext.ExecuteProcedureMultipleResult(storedProcedureName, parameters, transaction);
+           
         }
         #endregion
     }
