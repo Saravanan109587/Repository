@@ -1,71 +1,39 @@
 ﻿using Dapper;
+using Dapper.Contrib.Extensions;
 using System;
 using System.Collections.Generic;
-using System.Configuration;
 using System.Data;
+using System.Data.SqlClient;
 using System.Linq;
 using System.Linq.Expressions;
-using System.Reflection;
-using System.Text;
-using System.Threading.Tasks;
-using ASLogger;
+
 namespace BaseRepo
 {
     public class DataContext : IDataContext
     {
         #region Fields
-        private readonly IProvider _provider =new SqlServerProvider();
+        private readonly IProvider _provider = new SqlServerProvider();
         private readonly IDbConnection _connection;
-        private readonly IAslogger _logger;   
+
+        private readonly string _connectionstring;
         #endregion
 
         #region Ctor
         public DataContext(string connectionstring)
         {
+
             Check.IsEmpty(connectionstring);
+            _connectionstring = connectionstring;
             // var connectionString = ConfigurationManager.ConnectionStrings[connectionName];
 
             // _provider = ProviderHelper.GetProvider(connectionString.ProviderName);
             //_connection = _provider.CreateConnection(connectionString.ConnectionString);             
-             _connection = _provider.CreateConnection(connectionstring);
-            _logger = new ASLogProvider("");
+            _connection = _provider.CreateConnection(connectionstring);
+
         }
         #endregion
 
-        #region Utilities
-        /// <summary>
-        /// Get parameter name and value from item collections to dictionary.
-        /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <param name="items"></param>
-        /// <returns></returns>
-        protected virtual IDictionary<string, object> GetParameters<T>(IEnumerable<T> items)
-        {
-            Check.IsNullOrEmpty(items);
-            try
-            {
-                var parameters = new Dictionary<string, object>();
-                var entityArray = items.ToArray();
-                var entityType = entityArray[0].GetType();
-                for (int i = 0; i < entityArray.Length; i++)
-                {
-                    var properties = entityArray[i].GetType().GetProperties(BindingFlags.Public | BindingFlags.Instance);
-                    properties = properties.Where(x => x.Name != "Id").ToArray();
 
-                    foreach (var property in properties)
-                        parameters.Add(property.Name + (i + 1), entityType.GetProperty(property.Name).GetValue(entityArray[i], null));
-                }
-
-                return parameters;
-            }
-            catch (Exception e)
-            {
-                _logger.Error(e, e.Message);
-                throw;
-            }
-           
-        }
-        #endregion
 
         #region Sync Methods
         /// <summary>
@@ -74,22 +42,23 @@ namespace BaseRepo
         /// <typeparam name="T"></typeparam>
         /// <param name="item"></param>
         /// <param name="transaction"></param>
-        public virtual void Insert<T>(T item, IDbTransaction transaction = null) where T : class
+        public virtual void Insert<T>(T item, IDbTransaction transaction = null, int? timeout = 30) where T : class
         {
 
             try
-            { 
-                     Check.IsNull(item);
-                     string commandText = _provider.InsertQuery(typeof(T).Name, item);              
-                    _connection.ExecuteScalar<int>(commandText, item, transaction);
-                  
-            }
-            catch (Exception e)
             {
-                _logger.Error(e, e.Message);
+                Check.IsNull(item);
+                string commandText = _provider.InsertQuery(typeof(T).Name, item);
+                //  _connection.ExecuteScalar<int>(commandText, item, transaction);
+                _connection.Insert<T>(item, transaction, timeout);
+
+
+            }
+            catch (Exception)
+            {
                 throw;
             }
-          
+
         }
 
         /// <summary>
@@ -98,51 +67,18 @@ namespace BaseRepo
         /// <typeparam name="T"></typeparam>
         /// <param name="items"></param>
         /// <param name="transaction"></param>
-        public virtual int InsertBulk<T>(IEnumerable<T> items, IDbTransaction transaction = null) where T : class
+        public virtual int InsertBulk<T>(IEnumerable<T> items, IDbTransaction transaction = null, int? timeout = null) where T : class
         {
             Check.IsNullOrEmpty(items);
+            items.ToList().ForEach(z =>
+            {
+                _connection.Insert<T>(z, transaction, timeout);
+            });
 
-            string commandText = _provider.InsertBulkQuery(typeof(T).Name, items);
-            var parameters = GetParameters(items);
-             
-                return _connection.Execute(commandText, parameters, transaction);
-             
+            return 1;
         }
 
-        /// <summary>
-        /// Update an item
-        /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <param name="item"></param>
-        /// <param name="transaction"></param>
-        public virtual int Update<T>(T item, IDbTransaction transaction = null) where T : class
-        {
-            Check.IsNull(item);
 
-            string commandText = _provider.UpdateQuery(typeof(T).Name, item);
-
-            //execute
-            return _connection.Execute(commandText, item, transaction);
-        }
-
-        /// <summary>
-        /// Update item collection
-        /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <param name="items"></param>
-        /// <param name="transaction"></param>
-        public virtual int UpdateBulk<T>(IEnumerable<T> items, IDbTransaction transaction = null) where T : class
-        {
-            Check.IsNullOrEmpty(items);
-
-            string commandText = _provider.UpdateBulkQuery(typeof(T).Name, items);
-            var parameters = GetParameters(items);
-             
-            return _connection.Execute(commandText, parameters, transaction);
-        }
-         
-      
-       
 
         /// <summary>
         /// Find an item by lambda expressions
@@ -169,7 +105,7 @@ namespace BaseRepo
         {
             IEnumerable<T> items = new List<T>();
             string commandText = _provider.SelectQuery<T>(expression, typeof(T).Name);
-            var parameters = expression is  null ?null: ExpressionHelper.GetWhereParemeters(expression);
+            var parameters = expression is null ? null : ExpressionHelper.GetWhereParemeters(expression);
 
             //execute query
             return _connection.Query<T>(commandText, parameters);
@@ -181,12 +117,12 @@ namespace BaseRepo
         /// <param name="commandText"></param>
         /// <param name="parameters"></param>
         /// <param name="transaction"></param>
-        public virtual int Execute(string commandText, object parameters = null, IDbTransaction transaction = null)
+        public virtual int Execute(string commandText, DynamicParameters parameters = null, int? timeout = null, IDbTransaction transaction = null)
         {
             Check.IsNullOrEmpty(commandText);
 
             //execute
-            return _connection.Execute(commandText, parameters, transaction);
+            return _connection.Execute(commandText, parameters, transaction, commandTimeout: timeout);
         }
 
         /// <summary>
@@ -196,12 +132,12 @@ namespace BaseRepo
         /// <param name="parameters"></param>
         /// <param name="transaction"></param>
         /// <returns></returns>
-        public virtual IDataReader ExecuteReader(string commandText, object parameters = null, IDbTransaction transaction = null)
+        public virtual IDataReader ExecuteReader(string commandText, DynamicParameters parameters = null, int? timeout = null, IDbTransaction transaction = null)
         {
             Check.IsNullOrEmpty(commandText);
 
             //execute reader
-            return _connection.ExecuteReader(commandText, parameters, transaction);
+            return _connection.ExecuteReader(commandText, parameters, transaction, commandTimeout: timeout);
         }
 
         /// <summary>
@@ -212,7 +148,7 @@ namespace BaseRepo
         /// <param name="parameters"></param>
         /// <param name="transaction"></param>
         /// <returns></returns>
-        public virtual T ExecuteScalar<T>(string commandText, object parameters = null, IDbTransaction transaction = null) where T : class
+        public virtual T ExecuteScalar<T>(string commandText, DynamicParameters parameters = null, int? timeout = null, IDbTransaction transaction = null) where T : class
         {
             Check.IsNullOrEmpty(commandText);
 
@@ -226,7 +162,7 @@ namespace BaseRepo
         /// <param name="storedProcedureName"></param>
         /// <param name="parameters"></param>
         /// <param name="transaction"></param>
-        public virtual int ExecuteProcedure(string storedProcedureName, object parameters = null, IDbTransaction transaction = null)
+        public virtual int ExecuteProcedure(string storedProcedureName, DynamicParameters parameters = null, int? timeout = null, IDbTransaction transaction = null)
         {
             Check.IsNullOrEmpty(storedProcedureName);
 
@@ -234,6 +170,7 @@ namespace BaseRepo
             return _connection.Execute(sql: storedProcedureName,
                 param: parameters,
                 transaction: transaction,
+                 commandTimeout: timeout,
                 commandType: CommandType.StoredProcedure);
         }
 
@@ -244,7 +181,7 @@ namespace BaseRepo
         /// <param name="parameters"></param>
         /// <param name="transaction"></param>
         /// <returns></returns>
-        public virtual IDataReader ExecuteReaderProcedure(string storedProcedureName, object parameters = null, IDbTransaction transaction = null)
+        public virtual IDataReader ExecuteReaderProcedure(string storedProcedureName, DynamicParameters parameters = null, int? timeout = null, IDbTransaction transaction = null)
         {
             Check.IsNullOrEmpty(storedProcedureName);
 
@@ -252,9 +189,48 @@ namespace BaseRepo
             return _connection.ExecuteReader(sql: storedProcedureName,
                 param: parameters,
                 transaction: transaction,
+                 commandTimeout: timeout,
                 commandType: CommandType.StoredProcedure);
         }
 
+        public virtual bool BulkInsert(DataTable table, string tableName, int? timeout = null, IDbTransaction transaction = null)
+        {
+            using (var sqlCon = new SqlConnection(_connectionstring))
+            {
+                sqlCon.Open();
+                try
+                {
+                    using (var bulkCopy = new SqlBulkCopy(sqlCon))
+                    {
+                        for (int i = 0; i < table.Columns.Count; i++)
+                        {
+                            DataColumn col = table.Columns[i];
+                            bulkCopy.ColumnMappings.Add(col.ColumnName, col.ColumnName);
+                        }
+                        bulkCopy.BulkCopyTimeout = 100000;
+                        bulkCopy.DestinationTableName = tableName;
+
+                        try
+                        {
+                            bulkCopy.WriteToServer(table);
+                        }
+
+                        catch (Exception)
+                        {
+
+                            throw;
+                        }
+                    }
+                }
+                catch (Exception)
+                {
+
+                    throw;
+                }
+                return true;
+            }
+
+        }
         /// <summary>
         /// Execute scalar with stored procedure by name
         /// </summary>
@@ -263,16 +239,17 @@ namespace BaseRepo
         /// <param name="parameters"></param>
         /// <param name="transaction"></param>
         /// <returns></returns>
-        public virtual T ExecuteScalarProcedure<T>(string storedProcedureName, object parameters = null, IDbTransaction transaction = null) where T : class
+        public virtual T ExecuteScalarProcedure<T>(string storedProcedureName, DynamicParameters parameters = null, int? timeout = null, IDbTransaction transaction = null) where T : class
         {
             Check.IsNullOrEmpty(storedProcedureName);
-             
-            
-                return _connection.ExecuteScalar<T>(sql: storedProcedureName,
-              param: parameters,
-              transaction: transaction,
-              commandType: CommandType.StoredProcedure);
-           
+
+
+            return _connection.ExecuteScalar<T>(sql: storedProcedureName,
+          param: parameters,
+          transaction: transaction,
+           commandTimeout: timeout,
+          commandType: CommandType.StoredProcedure);
+
         }
 
         /// <summary>
@@ -282,13 +259,14 @@ namespace BaseRepo
         /// <param name="parameters"></param>
         /// <param name="transaction"></param>
         /// <returns></returns>
-        public virtual SqlMapper.GridReader ExecuteProcedureMultipleResult(string storedProcedureName, object parameters = null, IDbTransaction transaction = null)  
+        public virtual SqlMapper.GridReader ExecuteProcedureMultipleResult(string storedProcedureName, DynamicParameters parameters = null, int? timeout = null, IDbTransaction transaction = null)
         {
             Check.IsNullOrEmpty(storedProcedureName);
-                return _connection.QueryMultiple(sql: storedProcedureName,
-               param: parameters,
-               transaction: transaction,
-               commandType: CommandType.StoredProcedure);        
+            return _connection.QueryMultiple(sql: storedProcedureName,
+           param: parameters,
+           transaction: transaction,
+            commandTimeout: timeout,
+           commandType: CommandType.StoredProcedure);
         }
         /// <summary>
         /// /Execute Sp and returns the result
@@ -298,20 +276,21 @@ namespace BaseRepo
         /// <param name="parameters"></param>
         /// <param name="transaction"></param>
         /// <returns></returns>
-        public virtual IEnumerable<T> ExecuteProcedureSingleResult<T>(string storedProcedureName, object parameters = null, IDbTransaction transaction = null) where T : class
+        public virtual IEnumerable<T> ExecuteProcedureSingleResult<T>(string storedProcedureName, DynamicParameters parameters = null, int? timeout = null, IDbTransaction transaction = null)
         {
             Check.IsNullOrEmpty(storedProcedureName);
 
-             return _connection.Query<T>(sql: storedProcedureName,
-               param: parameters,
-               transaction: transaction,
-               commandType: CommandType.StoredProcedure);
-           
+            return _connection.Query<T>(sql: storedProcedureName,
+              param: parameters,
+              commandTimeout: timeout,
+              transaction: transaction,
+              commandType: CommandType.StoredProcedure);
+
 
         }
         #endregion
 
-      
+
         #region Context Management
         /// <summary>
         /// Begin transcation scope
@@ -355,6 +334,28 @@ namespace BaseRepo
         {
             if (_connection != null)
                 _connection.Dispose();
+        }
+
+        public bool Delete<T>(T item, IDbTransaction transaction = null, int? timeout = null) where T : class
+        {
+            return _connection.Delete<T>(item, transaction, timeout);
+        }
+
+        public bool DeleteBulk<T>(IEnumerable<T> item, IDbTransaction transaction = null, int? timeout = null) where T : class
+        {
+            return _connection.DeleteAll<T>();
+
+        }
+
+        public bool Update<T>(T item, IDbTransaction transaction = null, int? timeout = null) where T : class
+        {
+            return _connection.Update<T>(item, transaction, timeout);
+
+        }
+
+        public IEnumerable<T> FindAll<T>() where T : class
+        {
+            return _connection.GetAll<T>();
         }
         #endregion
     }

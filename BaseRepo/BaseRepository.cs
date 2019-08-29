@@ -1,16 +1,15 @@
-﻿using System;
+﻿using Dapper;
+using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Diagnostics;
 using System.Linq;
 using System.Linq.Expressions;
-using System.Text;
 using System.Threading.Tasks;
-using Dapper;
+using System.Transactions;
 
 namespace BaseRepo
-{
-    #region With Model Entity
+{ 
     public class Repository<T> : IRepository<T> where T : class
     {
         #region Fields
@@ -24,39 +23,24 @@ namespace BaseRepo
         }
         #endregion
 
-        #region Sync Methods
-        public void Insert(T item)
-        {
-            try
-            {
-                using (IDataContext _dataContext = new DataContext(_connectionstring))
-                {
-                    _dataContext.Insert(item);
-                }
-              
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine(ex.ToString());
-            }
-        }
-
-        public void InsertBulk(IEnumerable<T> items)
-        {
-            try
-            {
-                using (IDataContext _dataContext = new DataContext(_connectionstring))
-                {
-                    _dataContext.InsertBulk(items);
-                }
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine(ex.ToString());
-            }
-        }
-
        
+
+        public void InsertBulk(IEnumerable<T> items, IDbTransaction transaction = null, int? timeout = null)
+        {
+            try
+            {
+                using (IDataContext _dataContext = new DataContext(_connectionstring))
+                {
+                    _dataContext.InsertBulk(items, transaction, timeout);
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine(ex.ToString());
+            }
+        }
+
+
         public T Find(Expression<Func<T, bool>> expression)
         {
             using (IDataContext _dataContext = new DataContext(_connectionstring))
@@ -73,72 +57,107 @@ namespace BaseRepo
             }
         }
 
-        public int Execute(string commandText, object parameters = null, IDbTransaction transaction = null)
+        public int Execute(string commandText, DynamicParameters parameters = null, int? timeout = null, IDbTransaction transaction = null)
         {
             using (IDataContext _dataContext = new DataContext(_connectionstring))
             {
-                return _dataContext.Execute(commandText, parameters, transaction);
+                return _dataContext.Execute(commandText, parameters, timeout, transaction);
             }
         }
 
-        public IEnumerable<T1> ExecuteProcedureSingleResult<T1>(string storedProcedureName, object parameters = null, IDbTransaction transaction = null) where T1 : class
+        public IEnumerable<T1> ExecuteProcedureSingleResult<T1>(string storedProcedureName, DynamicParameters parameters = null, int? timeout = null, IDbTransaction transaction = null) 
         {
             using (IDataContext _dataContext = new DataContext(_connectionstring))
             {
-                return _dataContext.ExecuteProcedureSingleResult<T1>(storedProcedureName, parameters, transaction);
+                return _dataContext.ExecuteProcedureSingleResult<T1>(storedProcedureName, parameters, timeout, transaction);
             }
         }
 
-        public SqlMapper.GridReader ExecuteProcedureMultipleResult(string storedProcedureName, object parameters = null, IDbTransaction transaction = null)
+        public SqlMapper.GridReader ExecuteProcedureMultipleResult(string storedProcedureName, DynamicParameters parameters = null, int? timeout = null, IDbTransaction transaction = null)
         {
-                 IDataContext _dataContext = new DataContext(_connectionstring);
-                 return _dataContext.ExecuteProcedureMultipleResult(storedProcedureName, parameters, transaction);
-           
-        }
-        #endregion
-    }
-    #endregion
 
-    #region Without Modal Entity
-
-    public class Repository 
-    {
-        #region Fields
-        private readonly string _connectionstring;
-        #endregion
-
-        #region Ctor
-        public Repository(string connectionstring)
-        {
-            _connectionstring = connectionstring;
-        }
-        #endregion
-
-        #region Sync Methods 
-
-        public int Execute(string commandText, object parameters = null, IDbTransaction transaction = null)
-        {
-            using (IDataContext _dataContext = new DataContext(_connectionstring))
-            {
-                return _dataContext.Execute(commandText, parameters, transaction);
-            }
-        }
-
-        public IEnumerable<T1> ExecuteProcedureSingleResult<T1>(string storedProcedureName, object parameters = null, IDbTransaction transaction = null) where T1 : class
-        {
-            using (IDataContext _dataContext = new DataContext(_connectionstring))
-            {
-                return _dataContext.ExecuteProcedureSingleResult<T1>(storedProcedureName, parameters, transaction);
-            }
-        }
-
-        public SqlMapper.GridReader ExecuteProcedureMultipleResult(string storedProcedureName, object parameters = null, IDbTransaction transaction = null)
-        {
             IDataContext _dataContext = new DataContext(_connectionstring);
-            return _dataContext.ExecuteProcedureMultipleResult(storedProcedureName, parameters, transaction);
+            return _dataContext.ExecuteProcedureMultipleResult(storedProcedureName, parameters, timeout, transaction);
 
         }
-        #endregion
+
+        public virtual bool BulkInsert(DataTable table, string tableName, int? timeout = null, IDbTransaction transaction = null)
+        {
+            bool res = false;
+            using (IDataContext _dataContext = new DataContext(_connectionstring))
+            {
+                res = _dataContext.BulkInsert(table, tableName, timeout);
+            }
+            return res;
+        }
+
+
+        public int Update(T item, IDbTransaction transaction = null, int? timeout = null)
+        {
+
+            try
+            {
+                using (IDataContext _dataContext = new DataContext(_connectionstring))
+                {
+                    _dataContext.Update<T>(item);
+                }
+            }
+            catch (Exception ex)
+            {
+                return 0;
+            }
+            return 1;
+
+        }
+
+        public int Delete(T item, IDbTransaction transaction = null, int? timeout = null)
+        {
+            try
+            {
+                using (IDataContext _dataContext = new DataContext(_connectionstring))
+                {
+                    _dataContext.Delete<T>(item);
+                }
+            }
+            catch (Exception ex)
+            {
+                return 0;
+            }
+            return 1;
+        }
+
+        public IEnumerable<T> FindALL()
+        {
+            try
+            {
+                using (IDataContext _dataContext = new DataContext(_connectionstring))
+                {
+                    return _dataContext.FindAll<T>();
+                }
+            }
+            catch (Exception ex)
+            {
+                return null;
+            }
+        }
+
+        public int Insert(T item, IDbTransaction transaction = null, int? timeout = null)
+        {
+            using (IDataContext _dataContext = new DataContext(_connectionstring))
+            {
+                _dataContext.Insert<T>(item, transaction, timeout);
+            }
+            return 1;
+        }
+
+        public bool BulkDelete(T item, IDbTransaction transaction = null, int? timeout = null)
+        {
+            using (IDataContext _dataContext = new DataContext(_connectionstring))
+            {
+               return  _dataContext.Delete<T>(item, transaction, timeout);
+            }
+        }
     }
-    #endregion
+    
 }
+ 

@@ -1,0 +1,9 @@
+D:\Code\LatestSubModule\Helpers\BaseRepo\BaseRepoCore\obj\Release\netstandard2.0\BaseRepoCore.csprojAssemblyReference.cache
+D:\Code\LatestSubModule\Helpers\BaseRepo\BaseRepoCore\obj\Release\netstandard2.0\BaseRepoCore.csproj.CoreCompileInputs.cache
+D:\Code\LatestSubModule\Helpers\BaseRepo\BaseRepoCore\obj\Release\netstandard2.0\BaseRepoCore.AssemblyInfoInputs.cache
+D:\Code\LatestSubModule\Helpers\BaseRepo\BaseRepoCore\obj\Release\netstandard2.0\BaseRepoCore.AssemblyInfo.cs
+D:\Code\LatestSubModule\Helpers\BaseRepo\BaseRepoCore\bin\Release\netstandard2.0\BaseRepoCore.deps.json
+D:\Code\LatestSubModule\Helpers\BaseRepo\BaseRepoCore\bin\Release\netstandard2.0\BaseRepoCore.dll
+D:\Code\LatestSubModule\Helpers\BaseRepo\BaseRepoCore\bin\Release\netstandard2.0\BaseRepoCore.pdb
+D:\Code\LatestSubModule\Helpers\BaseRepo\BaseRepoCore\obj\Release\netstandard2.0\BaseRepoCore.dll
+D:\Code\LatestSubModule\Helpers\BaseRepo\BaseRepoCore\obj\Release\netstandard2.0\BaseRepoCore.pdb
