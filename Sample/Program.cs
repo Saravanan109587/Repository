@@ -1,6 +1,7 @@
 ﻿using BaseRepo;
 using Dapper;
 using Dapper.Contrib.Extensions;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 namespace Sample
@@ -29,13 +30,9 @@ namespace Sample
                    Age=2
                }
            };
-   
-          
+            Console.WriteLine(re.exeWithparams());
 
-
-
-
-            re.exeWithparams();
+            Console.ReadLine();
         }
     }
 
@@ -87,14 +84,14 @@ namespace Sample
         //}
 
              
-        public void exeWithparams()
+        public string exeWithparams()
         {
             DynamicParameters param = new DynamicParameters();
             param.Add("fundID",365317);
             param.Add("startDate", Convert.ToDateTime("2017-01-01"));
             param.Add("endDate",Convert.ToDateTime( "2010-4-01"));
           var teststts=  ExecuteProcedureUnKnownModal("USP_GetCorrelationofAssetwithIndexFunds", param);
-           
+           return JsonConvert.SerializeObject(teststts);
         }
     }
 

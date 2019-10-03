@@ -12,3 +12,5 @@ D:\Code\LatestSubModule\Helpers\BaseRepo\Sample\obj\Debug\Sample.pdb
 D:\Code\LatestSubModule\Helpers\BaseRepo\Sample\bin\Debug\BaseRepo.pdb
 D:\Code\LatestSubModule\Helpers\BaseRepo\Sample\bin\Debug\Dapper.Contrib.dll
 D:\Code\LatestSubModule\Helpers\BaseRepo\Sample\bin\Debug\Dapper.Contrib.xml
+D:\Code\LatestSubModule\Helpers\BaseRepo\Sample\bin\Debug\Newtonsoft.Json.dll
+D:\Code\LatestSubModule\Helpers\BaseRepo\Sample\bin\Debug\Newtonsoft.Json.xml

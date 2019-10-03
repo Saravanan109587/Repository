@@ -356,10 +356,9 @@ namespace BaseRepo
             commandTimeout: timeout,
             transaction: transaction,
             commandType: CommandType.StoredProcedure);
-            tbl.Load(reader);
+           // tbl.Load(reader);
             Dictionary<string, dynamic> test = new Dictionary<string, dynamic>();
-             
-                
+              
             List<List<KeyValuePair<String, string>>> tableLsit = new List<List<KeyValuePair<string, string>>>();
             while (reader.Read())
             {
@@ -367,21 +366,21 @@ namespace BaseRepo
                     List<KeyValuePair<String, string>> row = new List<KeyValuePair<string, string>>();
                     for (int i = 0; i < reader.FieldCount; i++)
                     {
-                        row.Add(new KeyValuePair<string, string>(tbl.Columns[i].ColumnName, Convert.ToString(reader[i])));
+                        row.Add(new KeyValuePair<string, string>(reader.GetName(i), Convert.ToString(reader[i])));
                     }
                     tableLsit.Add(row);
                  
             }
 
-            foreach (DataRow dr in tbl.Rows)
-            {
-                List<KeyValuePair<String, string>> row = new List<KeyValuePair<string, string>>();
-                for (int i = 0; i < tbl.Columns.Count; i++)
-                {
-                    row.Add(new KeyValuePair<string, string>(tbl.Columns[i].ColumnName, Convert.ToString(dr[tbl.Columns[i].ColumnName])));
-                }
-                tableLsit.Add(row);
-            }
+            //foreach (DataRow dr in tbl.Rows)
+            //{
+            //    List<KeyValuePair<String, string>> row = new List<KeyValuePair<string, string>>();
+            //    for (int i = 0; i < tbl.Columns.Count; i++)
+            //    {
+            //        row.Add(new KeyValuePair<string, string>(tbl.Columns[i].ColumnName, Convert.ToString(dr[tbl.Columns[i].ColumnName])));
+            //    }
+            //    tableLsit.Add(row);
+            //}
 
             return tableLsit.Select(c => c.ToDictionary(b => b.Key, b => b.Value)).ToList();
 
