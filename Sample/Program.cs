@@ -86,13 +86,15 @@ namespace Sample
         //      return base.FindAll(FilterByID("Saravanan"));        
         //}
 
-
-
+             
         public void exeWithparams()
         {
             DynamicParameters param = new DynamicParameters();
-            param.Add("@fundId", 8877);
-            var result = base.ExecuteProcedureSingleResult<DateTime>("GetDates");
+            param.Add("fundID",365317);
+            param.Add("startDate", Convert.ToDateTime("2017-01-01"));
+            param.Add("endDate",Convert.ToDateTime( "2010-4-01"));
+          var teststts=  ExecuteProcedureUnKnownModal("USP_GetCorrelationofAssetwithIndexFunds", param);
+           
         }
     }
 

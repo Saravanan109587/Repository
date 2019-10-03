@@ -12,6 +12,7 @@ namespace BaseRepo
     public interface IDataContext:IDisposable
     {
         #region Sync Methods
+
         void Insert<T>(T item, IDbTransaction transaction = null, int? timeout = null) where T : class;
         bool Delete<T>(T item, IDbTransaction transaction = null, int? timeout = null) where T : class;
         bool DeleteBulk<T>(IEnumerable<T> item, IDbTransaction transaction = null, int? timeout = null) where T : class;
@@ -34,5 +35,6 @@ namespace BaseRepo
         void OpenConnection();
         IDbTransaction BeginTransaction();
           bool BulkInsert(DataTable table, string tableName, int? timeout = null, IDbTransaction transaction = null);
+        List<Dictionary<string, string>> ExecuteProcWithUnknownModal(string storedProcedureName, DynamicParameters parameters = null, int? timeout = null, IDbTransaction transaction = null);
     }
 }

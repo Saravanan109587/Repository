@@ -17,5 +17,6 @@ namespace BaseRepo
         Task<bool> BulkInsertAsync(DataTable table, string tableName, int? timeout = null, IDbTransaction transaction = null);
         bool BulkInsert(Dictionary<string, DataTable> Datatables, int? timeout = null, IDbTransaction transaction = null);
         Task<bool> BulkInsertAsync(Dictionary<string, DataTable> Datatables, int? timeout = null, IDbTransaction transaction = null);
+        List<Dictionary<string, string>> ExecuteProcedureUnKnownModal(string storedProcedureName, DynamicParameters parameters = null, int? timeout = null, IDbTransaction transaction = null);
     }
 }

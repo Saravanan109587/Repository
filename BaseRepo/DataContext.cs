@@ -6,6 +6,7 @@ using System.Data;
 using System.Data.SqlClient;
 using System.Linq;
 using System.Linq.Expressions;
+using static Dapper.SqlMapper;
 
 namespace BaseRepo
 {
@@ -14,7 +15,6 @@ namespace BaseRepo
         #region Fields
         private readonly IProvider _provider = new SqlServerProvider();
         private readonly IDbConnection _connection;
-
         private readonly string _connectionstring;
         #endregion
 
@@ -32,9 +32,7 @@ namespace BaseRepo
 
         }
         #endregion
-
-
-
+          
         #region Sync Methods
         /// <summary>
         /// Insert an item
@@ -44,21 +42,16 @@ namespace BaseRepo
         /// <param name="transaction"></param>
         public virtual void Insert<T>(T item, IDbTransaction transaction = null, int? timeout = 30) where T : class
         {
-
             try
             {
                 Check.IsNull(item);
-                string commandText = _provider.InsertQuery(typeof(T).Name, item);
                 //  _connection.ExecuteScalar<int>(commandText, item, transaction);
                 _connection.Insert<T>(item, transaction, timeout);
-
-
             }
             catch (Exception)
             {
                 throw;
             }
-
         }
 
         /// <summary>
@@ -74,12 +67,9 @@ namespace BaseRepo
             {
                 _connection.Insert<T>(z, transaction, timeout);
             });
-
             return 1;
         }
-
-
-
+         
         /// <summary>
         /// Find an item by lambda expressions
         /// </summary>
@@ -243,7 +233,6 @@ namespace BaseRepo
         {
             Check.IsNullOrEmpty(storedProcedureName);
 
-
             return _connection.ExecuteScalar<T>(sql: storedProcedureName,
           param: parameters,
           transaction: transaction,
@@ -356,6 +345,49 @@ namespace BaseRepo
         public IEnumerable<T> FindAll<T>() where T : class
         {
             return _connection.GetAll<T>();
+        }
+
+        public List<Dictionary<string, string>> ExecuteProcWithUnknownModal(string storedProcedureName, DynamicParameters parameters = null, int? timeout = null, IDbTransaction transaction = null)
+        {
+            DataTable tbl = new DataTable();
+              
+            IDataReader reader = _connection.ExecuteReader(sql: storedProcedureName,
+            param: parameters,
+            commandTimeout: timeout,
+            transaction: transaction,
+            commandType: CommandType.StoredProcedure);
+            tbl.Load(reader);
+            Dictionary<string, dynamic> test = new Dictionary<string, dynamic>();
+             
+                
+            List<List<KeyValuePair<String, string>>> tableLsit = new List<List<KeyValuePair<string, string>>>();
+            while (reader.Read())
+            {
+               
+                    List<KeyValuePair<String, string>> row = new List<KeyValuePair<string, string>>();
+                    for (int i = 0; i < reader.FieldCount; i++)
+                    {
+                        row.Add(new KeyValuePair<string, string>(tbl.Columns[i].ColumnName, Convert.ToString(reader[i])));
+                    }
+                    tableLsit.Add(row);
+                 
+            }
+
+            foreach (DataRow dr in tbl.Rows)
+            {
+                List<KeyValuePair<String, string>> row = new List<KeyValuePair<string, string>>();
+                for (int i = 0; i < tbl.Columns.Count; i++)
+                {
+                    row.Add(new KeyValuePair<string, string>(tbl.Columns[i].ColumnName, Convert.ToString(dr[tbl.Columns[i].ColumnName])));
+                }
+                tableLsit.Add(row);
+            }
+
+            return tableLsit.Select(c => c.ToDictionary(b => b.Key, b => b.Value)).ToList();
+
+             
+
+
         }
         #endregion
     }

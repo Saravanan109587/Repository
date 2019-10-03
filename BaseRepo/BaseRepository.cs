@@ -23,8 +23,7 @@ namespace BaseRepo
         }
         #endregion
 
-       
-
+        
         public void InsertBulk(IEnumerable<T> items, IDbTransaction transaction = null, int? timeout = null)
         {
             try
@@ -155,6 +154,14 @@ namespace BaseRepo
             using (IDataContext _dataContext = new DataContext(_connectionstring))
             {
                return  _dataContext.Delete<T>(item, transaction, timeout);
+            }
+        }
+
+        public List<Dictionary<string, string>> ExecuteProcedureUnKnownModal(string storedProcedureName, DynamicParameters parameters = null, int? timeout = null, IDbTransaction transaction = null)
+        {
+            using (IDataContext _dataContext = new DataContext(_connectionstring))
+            {
+                return _dataContext.ExecuteProcWithUnknownModal(storedProcedureName, parameters, timeout, transaction);
             }
         }
     }

@@ -15,6 +15,6 @@ D:\Code\LatestSubModule\Helpers\BaseRepo\BaseRepo\obj\Debug\BaseRepo.csproj.Core
 D:\Code\LatestSubModule\Helpers\BaseRepo\BaseRepo\obj\Debug\BaseRepo.csproj.CopyComplete
 D:\Code\LatestSubModule\Helpers\BaseRepo\BaseRepo\obj\Debug\BaseRepo.dll
 D:\Code\LatestSubModule\Helpers\BaseRepo\BaseRepo\obj\Debug\BaseRepo.pdb
-D:\Code\LatestSubModule\Helpers\BaseRepo\BaseRepo\obj\Debug\BaseRepo.csprojAssemblyReference.cache
 D:\Code\LatestSubModule\Helpers\BaseRepo\BaseRepo\bin\Debug\Dapper.Contrib.dll
 D:\Code\LatestSubModule\Helpers\BaseRepo\BaseRepo\bin\Debug\Dapper.Contrib.xml
+D:\Code\LatestSubModule\Helpers\BaseRepo\BaseRepo\obj\Debug\BaseRepo.csprojAssemblyReference.cache

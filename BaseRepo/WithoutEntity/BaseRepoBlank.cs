@@ -34,7 +34,7 @@ namespace BaseRepo
             }
         }
 
-        public IEnumerable<T1> ExecuteProcedureSingleResult<T1>(string storedProcedureName, DynamicParameters parameters = null, int? timeout = null, IDbTransaction transaction = null)
+        public IEnumerable<T1> ExecuteProcedureSingleResult<T1>(string storedProcedureName, DynamicParameters parameters = null, int? timeout = null, IDbTransaction transaction = null)  
         {
             using (IDataContext _dataContext = new DataContext(_connectionstring))
             {
@@ -108,8 +108,15 @@ namespace BaseRepo
 
             return res;
         }
+        public List<Dictionary<string, string>> ExecuteProcedureUnKnownModal(string storedProcedureName, DynamicParameters parameters = null, int? timeout = null, IDbTransaction transaction = null)
+        {
+            using (IDataContext _dataContext = new DataContext(_connectionstring))
+            {
+                return _dataContext.ExecuteProcWithUnknownModal(storedProcedureName, parameters, timeout, transaction);
+            }
+        }
 
-       
+
         #endregion
     }
     #endregion

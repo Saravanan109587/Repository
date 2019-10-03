@@ -10,9 +10,7 @@ _ReSharper.*/
 *.opensdf
 *.tlog
 *.log
-TestResult.xml
-*.VisualState.xml
-Version.cs
-Version.h
-Version.cpp
-/.vs/BaseRepo/v15/Server/sqlite3
+ bin
+ Debug
+ Release
+.vs
