@@ -2,7 +2,7 @@
 <package >
   <metadata>
     <id>BaseRepo</id>
-    <version>1.0.7</version>
+    <version>1.0.8</version>
     <authors>saravanan.n</authors>
     <owners>saravanan.n</owners>
     <licenseUrl>http://github.com</licenseUrl>

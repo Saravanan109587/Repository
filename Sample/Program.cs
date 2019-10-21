@@ -4,6 +4,8 @@ using Dapper.Contrib.Extensions;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
+using System.Data.SqlClient;
+
 namespace Sample
 {
     public partial class ReturnsData
@@ -86,11 +88,13 @@ namespace Sample
              
         public string exeWithparams()
         {
-            DynamicParameters param = new DynamicParameters();
-            param.Add("fundID",365317);
-            param.Add("startDate", Convert.ToDateTime("2017-01-01"));
-            param.Add("endDate",Convert.ToDateTime( "2010-4-01"));
-          var teststts=  ExecuteProcedureUnKnownModal("USP_GetCorrelationofAssetwithIndexFunds", param);
+            SqlParameter[] parameter = {
+new SqlParameter("TableName","AdvSearch_User126a5c0a91044859a0f0ac389023091c")
+};
+
+            //param.Add("startDate", Convert.ToDateTime("2017-01-01"));
+            //param.Add("endDate",Convert.ToDateTime( "2010-4-01"));
+            var teststts=  ExecuteExportToDataTable("USP_GetAdvSearchResult", parameter);
            return JsonConvert.SerializeObject(teststts);
         }
     }

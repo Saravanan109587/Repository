@@ -5,7 +5,6 @@ D:\Code\LatestSubModule\Helpers\BaseRepo\Sample\bin\Debug\BaseRepo.dll
 D:\Code\LatestSubModule\Helpers\BaseRepo\Sample\bin\Debug\Dapper.dll
 D:\Code\LatestSubModule\Helpers\BaseRepo\Sample\bin\Debug\Dapper.xml
 D:\Code\LatestSubModule\Helpers\BaseRepo\Sample\obj\Debug\Sample.csprojAssemblyReference.cache
-D:\Code\LatestSubModule\Helpers\BaseRepo\Sample\obj\Debug\Sample.csproj.CoreCompileInputs.cache
 D:\Code\LatestSubModule\Helpers\BaseRepo\Sample\obj\Debug\Sample.csproj.CopyComplete
 D:\Code\LatestSubModule\Helpers\BaseRepo\Sample\obj\Debug\Sample.exe
 D:\Code\LatestSubModule\Helpers\BaseRepo\Sample\obj\Debug\Sample.pdb

@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Data;
+using System.Data.SqlClient;
 using System.Diagnostics;
 using System.Linq;
 using System.Linq.Expressions;
@@ -162,6 +163,14 @@ namespace BaseRepo
             using (IDataContext _dataContext = new DataContext(_connectionstring))
             {
                 return _dataContext.ExecuteProcWithUnknownModal(storedProcedureName, parameters, timeout, transaction);
+            }
+        }
+
+        public DataTable ExecuteExportToDataTable(string storedProcedureName, SqlParameter[] parameters = null, int? timeout = null, IDbTransaction transaction = null)
+        {
+            using (IDataContext _dataContext = new DataContext(_connectionstring))
+            {
+                return _dataContext.ExecuteExportToDataTable(storedProcedureName, parameters, timeout, transaction);
             }
         }
     }

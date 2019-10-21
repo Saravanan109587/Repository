@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Data;
+using System.Data.SqlClient;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Text;
@@ -36,5 +37,6 @@ namespace BaseRepo
         IDbTransaction BeginTransaction();
           bool BulkInsert(DataTable table, string tableName, int? timeout = null, IDbTransaction transaction = null);
         List<Dictionary<string, string>> ExecuteProcWithUnknownModal(string storedProcedureName, DynamicParameters parameters = null, int? timeout = null, IDbTransaction transaction = null);
+        DataTable ExecuteExportToDataTable(string storedProcedureName, SqlParameter[] parameters = null, int? timeout = null, IDbTransaction transaction = null);
     }
 }

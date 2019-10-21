@@ -341,7 +341,18 @@ namespace BaseRepo
             return _connection.Update<T>(item, transaction, timeout);
 
         }
-
+        public DataTable ExecuteExportToDataTable(string storedProcedureName, SqlParameter[] parameters = null, int? timeout = null, IDbTransaction transaction = null) 
+        {              
+            DataTable dt = new DataTable();
+            using (SqlConnection c = new SqlConnection(_connectionstring))
+            using (SqlDataAdapter sda = new SqlDataAdapter(storedProcedureName, c))
+            {
+                sda.SelectCommand.CommandType = CommandType.StoredProcedure;           
+                sda.SelectCommand.Parameters.AddRange(parameters);
+                sda.Fill(dt);
+            }
+            return dt;
+        }
         public IEnumerable<T> FindAll<T>() where T : class
         {
             return _connection.GetAll<T>();

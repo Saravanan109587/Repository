@@ -1,10 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Data;
+using System.Data.SqlClient;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using System.Transactions; 
+using System.Transactions;
 using Dapper;
 
 namespace BaseRepo
@@ -108,6 +109,14 @@ namespace BaseRepo
 
             return res;
         }
+        /// <summary>
+        /// Execute and return as Key value pair 
+        /// </summary>
+        /// <param name="storedProcedureName"></param>
+        /// <param name="parameters"></param>
+        /// <param name="timeout"></param>
+        /// <param name="transaction"></param>
+        /// <returns></returns>
         public List<Dictionary<string, string>> ExecuteProcedureUnKnownModal(string storedProcedureName, DynamicParameters parameters = null, int? timeout = null, IDbTransaction transaction = null)
         {
             using (IDataContext _dataContext = new DataContext(_connectionstring))
@@ -116,7 +125,22 @@ namespace BaseRepo
             }
         }
 
-
+        /// <summary>
+        /// Exceute using Standard Sql.Data.client and return as DatTable
+        /// </summary>
+        /// <param name="storedProcedureName"></param>
+        /// <param name="parameters"></param>
+        /// <param name="timeout"></param>
+        /// <param name="transaction"></param>
+        /// <returns></returns>
+        public DataTable ExecuteExportToDataTable(string storedProcedureName, SqlParameter[] parameters = null, int? timeout = null, IDbTransaction transaction = null)
+        {
+            using (IDataContext _dataContext = new DataContext(_connectionstring))
+            {
+                return _dataContext.ExecuteExportToDataTable(storedProcedureName, parameters, timeout, transaction);
+            }
+        }
+         
         #endregion
     }
     #endregion
