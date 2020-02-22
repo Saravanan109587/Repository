@@ -2,7 +2,7 @@
 <package >
   <metadata>
     <id>BaseRepo</id>
-    <version>1.0.8</version>
+    <version>1.0.9</version>
     <authors>saravanan.n</authors>
     <owners>saravanan.n</owners>
     <licenseUrl>http://github.com</licenseUrl>
@@ -10,7 +10,7 @@
     <iconUrl>http://github.com</iconUrl>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
     <description>.net 4.7.2 package to create Base SQL Server Repository</description>
-    <releaseNotes>Added Refenerence to Dapper.contribution Package and removed unncessary loggers</releaseNotes>
+    <releaseNotes>Added ExecuteExportToDataTable to Export REsult set as Datatable</releaseNotes>
     <copyright>Copyright 2019</copyright>
     <tags>c#,Sqlserver,Dapper</tags>
     <dependencies>
